@@ -6,7 +6,8 @@ import { unpackData } from "../middleware";
 export enum SocketEvent {
   'CONNECT' = 'connect',
   'ERROR' = 'error',
-  'MESSAGE' = 'MESSAGE'
+  'MESSAGE' = 'message',
+  'INTERNAL_ERROR' = 'internal_error'
 }
 
 export const Events = {
@@ -25,6 +26,8 @@ export interface IncomingEventData {
 
 export class Client {
   private taskManager: TaskManager = new TaskManager();
+  private lastMessage: IncomingEventData;
+
   constructor(public readonly socket: any) {
   }
   public emit(event: SocketEvent | ModuleName, data: any) {
@@ -32,7 +35,11 @@ export class Client {
   }
 
   public addJob(method: ModuleMethod) {
-    this.taskManager.addQueue(() => method(this));
+    this.taskManager.addQueue(() => method(this, this.lastMessage));
+  }
+
+  public setLastMessage(data: IncomingEventData) {
+    this.lastMessage = data;
   }
 }
 
@@ -46,9 +53,9 @@ export class Worker {
   }
 
   private handle(data: IncomingEventData, client: Client) {
-    const method = this.modules[data.event].getMethod(data.job);
+    const method = this.modules[data.event].getMethod(data);
     if (!method) {
-      return client.emit(SocketEvent.ERROR, "not found");
+      return client.emit(SocketEvent.INTERNAL_ERROR, "not found");
     }
     client.addJob(method);
   }
@@ -60,11 +67,15 @@ export class Worker {
         
         const [error, data] = unpackData(moduleName, dataString);
         if (error) {
-          return client.emit(SocketEvent.ERROR, "invalid message data send");
+          return client.emit(SocketEvent.INTERNAL_ERROR, "invalid message data send");
         }
+        client.setLastMessage(data);
         this.handle(data, client);
       })
     );
+    client.socket.on(SocketEvent.ERROR, (err) => {
+      console.log('client error', client.socket.session.id, err);
+    })
     console.log(client.socket.eventNames());
   }
 

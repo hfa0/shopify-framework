@@ -22,7 +22,7 @@ class Index extends React.Component {
       <Layout>
         <Button  onClick={() => this.props.API.fetch('private/test-post', 'POST', {job:'MAIL'})}>private post</Button>
         <Button  onClick={() =>  this.props.API.fetch('public/test/')}>public test</Button>
-        <Button  onClick={() =>  this.props.API.socket.emit('bulk', "hi")}>ping bulk</Button>
+        <Button  onClick={() =>  this.props.API.socket.emit('bulk', JSON.stringify({job:'upload', data:"data"}))}>ping bulk</Button>
       </Layout>
     </Page>
   );

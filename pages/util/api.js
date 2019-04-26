@@ -46,6 +46,10 @@ const Socket = function() {
     console.log('socket error', err)
   })
 
+  socket.on('internal_error', (err) => {
+    console.log('socket internal error', err)
+  })
+
   socket.io.reconnectionAttempts(3);
   socket.io.reconnectionDelay(5000);
 

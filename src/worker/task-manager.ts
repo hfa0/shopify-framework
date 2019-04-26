@@ -32,8 +32,8 @@ export class TaskManager {
 
   private maxQueues: number = 5;
   private maxParallelQueues: number = 2;
-  private waitingQueues: Queue[];
-  private parallelQueues: Queue[];
+  private waitingQueues: Queue[] = [];
+  private parallelQueues: Queue[] = [];
   private jobCount = 0;
   
   public addQueue(method: Function):void {
