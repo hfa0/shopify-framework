@@ -62,7 +62,7 @@ export class Worker {
   private registerClientEvents(client: Client) {
     Object.keys(this.modules).map((moduleName: any) => 
       client.socket.on(moduleName, (dataString: string) => {
-        console.log('receive', dataString);
+        console.log('server", "receive', dataString);
         
         const [error, data] = unpackData(moduleName, dataString);
         if (error) {
@@ -73,13 +73,13 @@ export class Worker {
       })
     );
     client.socket.on(SocketEvent.ERROR, (err) => {
-      console.log('client error', client.socket.session.id, err);
+      console.log('server", "client error', client.socket.session.shop, err);
     })
-    console.log(client.socket.eventNames());
+    console.log('server', 'registered events', client.socket.eventNames());
   }
 
   public registerClient = (socket) => {
-    console.log("server - register client");
+    console.log("server", "register client", socket.session.shop);
     
     const client = new Client(socket);
     this.registerClientEvents(client);

@@ -12,7 +12,7 @@ export const shareSession = (app) => {
     try {
       const ctx = app.createContext(socket.request, new http.ServerResponse(socket.request));
       socket.session = ctx.session;
-      console.log('share');
+      console.log('server', 'share');
       return next();
     } catch (err) {
       error = err;
@@ -23,10 +23,10 @@ export const shareSession = (app) => {
 
 
 export const verifySocketMessage = (socket, next) => {
-  console.log('verify');
+  console.log("server", 'verify');
   const xHeader = socket.handshake.headers['x-clientid']
   if (!socket.session.accessToken || xHeader !== 'client-id') {
-    console.log("no authorization");
+    console.log("server", "no authorization");
     socket.emit('error', "no authorization");
     socket.disconnect();
     return next("no authorization - disconnected");
@@ -35,7 +35,7 @@ export const verifySocketMessage = (socket, next) => {
 }
 
 export const verifed = (socket, next) => {
-  console.log('verifed', socket.session);
+  console.log('server', 'verifed', socket.session.shop);
   return next();
 }
 

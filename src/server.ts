@@ -47,7 +47,7 @@ nextApp.prepare().then(() => {
   app.io.on(SocketEvent.CONNECT, worker.registerClient);
 
   app.io.on(SocketEvent.ERROR, (error) => {
-    console.log('error', error)
+    console.log('server error', error)
   })
 
   app.io.use(shareSession(app));
