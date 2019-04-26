@@ -1,6 +1,6 @@
 import { Bulk } from "../modules/bulk";
 import { TaskManager} from "./task-manager";
-import { ModuleName, ModuleMethod, IAppModule } from "../modules";
+import { ModuleName, ModuleMethod, IAppModule, AppModule } from "../modules";
 
 export enum SocketEvent {
   'CONNECT' = 'connect',
@@ -12,6 +12,8 @@ export const Events = {
   ...ModuleName,
   ...SocketEvent
 }
+
+export type ModuleMap = {[name in ModuleName]: IAppModule}
 
 
 export class Client {
@@ -27,11 +29,12 @@ export class Client {
   }
 }
 
+
 export class Worker {
 
   private clients : {[name: string] : Client} = {};
 
-  public readonly modules: {[name in ModuleName]: IAppModule} = {
+  public readonly modules: ModuleMap = {
     [ModuleName.BULK] : Bulk
   }
 

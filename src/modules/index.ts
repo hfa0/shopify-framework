@@ -14,8 +14,8 @@ export abstract class AppModule {
   public static getMethod(job: string): ModuleMethod {
     const method = this[job];
     if (!method || typeof method !== 'function') {
-      return method;
+      return null;
     }
-    return null
+    return method;
   }
 }

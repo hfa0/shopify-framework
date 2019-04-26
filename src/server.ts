@@ -8,28 +8,31 @@ import * as socketIO from 'socket.io';
 import graphQLProxy from '@shopify/koa-shopify-graphql-proxy';
 import { ApiVersion } from '@shopify/koa-shopify-graphql-proxy';
 import * as bodyparser from 'koa-bodyparser';
-const { SHOPIFY_API_SECRET_KEY, NODE_ENV } = process.env;
-const port = parseInt(process.env.PORT, 10) || 3000;
+const { SHOPIFY_API_SECRET_KEY, NODE_ENV, PORT } = process.env;
+const port = parseInt(PORT, 10) || 3000;
 const dev = NODE_ENV !== 'production';
 const nextApp = next({ dev });
 const handle = nextApp.getRequestHandler();
 import auth from "./router/user/auth";
 import root from './router';
-import { shareSession, verifySocketMessage, verifed } from './middleware';
+import { shareSession, verifySocketMessage, verifed, rateLimit, helmet } from './middleware';
 import { Worker, SocketEvent } from './worker';
-
+import * as csurf from 'csurf';
 const worker = new Worker();
 
 
 nextApp.prepare().then(() => {
   const app = Object.assign(new Koa(), {server:null, io:null})
+
+  app.use(helmet);
   app.use(session(app));
   app.use(bodyparser());
-  app.keys = [SHOPIFY_API_SECRET_KEY];
+  app.use(rateLimit);
   app.use(auth);
   app.use(graphQLProxy({ version: ApiVersion.April19 }));
   app.use(root.routes());
 
+  app.keys = [SHOPIFY_API_SECRET_KEY];
   app.use(async ctx => {
     await handle(ctx.req, ctx.res);
     ctx.respond = false;

@@ -1,4 +1,4 @@
-const host = "https://931af36e.ngrok.io/"
+const host = "https://9e889079.ngrok.io/"
 import * as socketIO from 'socket.io-client';
 
 const parseData = (res) => {
