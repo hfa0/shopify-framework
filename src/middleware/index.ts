@@ -3,6 +3,8 @@ import * as http from 'http';
 import * as limiter from 'koa-ratelimit';
 import * as Redis from 'ioredis';
 import koaHelmet = require('koa-helmet');
+import { IncomingEventData } from '../worker';
+import { ModuleName } from '../modules';
 
 export const shareSession = (app) => {
   return (socket, next) => {
@@ -22,7 +24,8 @@ export const shareSession = (app) => {
 
 export const verifySocketMessage = (socket, next) => {
   console.log('verify');
-  if (!socket.session.accessToken) {
+  const xHeader = socket.handshake.headers['x-clientid']
+  if (!socket.session.accessToken || xHeader !== 'client-id') {
     console.log("no authorization");
     socket.emit('error', "no authorization");
     socket.disconnect();
@@ -36,10 +39,23 @@ export const verifed = (socket, next) => {
   return next();
 }
 
+export const unpackData = (event: ModuleName, dataString: string): [string, IncomingEventData] => {
+  let err = null, data = null;
+  try {
+    data = JSON.parse(dataString);
+    err = data.job ? null : 'job param missing';
+    err = data.data ? null : 'data param missing'
+    data.event = event;
+  } catch(error) {
+    err = error;
+  }
+  return [err, data];
+}
+
 
 export const rateLimit = limiter({
   db: new Redis({host: "127.0.0.1", port:5000}),
-  duration: 60000,
+  duration: 60 * 1000,
   errorMessage: 'Sometimes You Just Have to Slow Down.',
   id: (ctx) => ctx.ip,
   headers: {

@@ -1,6 +1,7 @@
 import { Bulk } from "../modules/bulk";
 import { TaskManager} from "./task-manager";
 import { ModuleName, ModuleMethod, IAppModule, AppModule } from "../modules";
+import { unpackData } from "../middleware";
 
 export enum SocketEvent {
   'CONNECT' = 'connect',
@@ -16,9 +17,15 @@ export const Events = {
 export type ModuleMap = {[name in ModuleName]: IAppModule}
 
 
+export interface IncomingEventData {
+  event: ModuleName
+  job: string
+  data: any
+} 
+
 export class Client {
   private taskManager: TaskManager = new TaskManager();
-  constructor(private socket: any) {
+  constructor(public readonly socket: any) {
   }
   public emit(event: SocketEvent | ModuleName, data: any) {
     this.socket.emit(event, JSON.stringify(data));
@@ -32,25 +39,40 @@ export class Client {
 
 export class Worker {
 
-  private clients : {[name: string] : Client} = {};
+  public readonly clients : {[name: string] : Client} = {};
 
   public readonly modules: ModuleMap = {
     [ModuleName.BULK] : Bulk
   }
 
-  public handle(module: ModuleName, socket) {
-    const client = this.clients[socket.session.shop];
-    if (!client) {
-      new Client(socket).emit(SocketEvent.ERROR, "not registered");
-    }
-    const method = this.modules[module].getMethod(socket.data.job);
+  private handle(data: IncomingEventData, client: Client) {
+    const method = this.modules[data.event].getMethod(data.job);
     if (!method) {
-      client.emit(SocketEvent.ERROR, "not found");
+      return client.emit(SocketEvent.ERROR, "not found");
     }
     client.addJob(method);
   }
 
-  public registerClient(socket) {
-    this.clients[socket.session.shop] = new Client(socket);
+  private registerClientEvents(client: Client) {
+    Object.keys(this.modules).map((moduleName: any) => 
+      client.socket.on(moduleName, (dataString: string) => {
+        console.log('receive', dataString);
+        
+        const [error, data] = unpackData(moduleName, dataString);
+        if (error) {
+          return client.emit(SocketEvent.ERROR, "invalid message data send");
+        }
+        this.handle(data, client);
+      })
+    );
+    console.log(client.socket.eventNames());
+  }
+
+  public registerClient = (socket) => {
+    console.log("server - register client");
+    
+    const client = new Client(socket);
+    this.registerClientEvents(client);
+    this.clients[socket.session.shop] = client;
   }
 }

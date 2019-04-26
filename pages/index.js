@@ -1,12 +1,14 @@
 import { Layout, Page, Button } from '@shopify/polaris';
 import * as React from "react";
 import store from 'store-js';
-import {API, Socket } from './util/api'
-
-const socket = Socket();
 
 class Index extends React.Component {
   state = { open: false };
+
+  constructor(props)  {
+    super(props);
+    props.API.socket.on('bulk', (msg) => console.log(msg))
+  }
 
   render() {
     // console.log("here test", this.props.client);
@@ -18,8 +20,9 @@ class Index extends React.Component {
       }}
     >
       <Layout>
-        <Button  onClick={() => API.fetch('private/test-post', 'POST', {job:'MAIL'})}>private post</Button>
-        <Button  onClick={() =>  API.fetch('public/test/')}>public test</Button>
+        <Button  onClick={() => this.props.API.fetch('private/test-post', 'POST', {job:'MAIL'})}>private post</Button>
+        <Button  onClick={() =>  this.props.API.fetch('public/test/')}>public test</Button>
+        <Button  onClick={() =>  this.props.API.socket.emit('bulk', "hi")}>ping bulk</Button>
       </Layout>
     </Page>
   );

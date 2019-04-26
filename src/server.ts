@@ -23,11 +23,10 @@ const worker = new Worker();
 
 nextApp.prepare().then(() => {
   const app = Object.assign(new Koa(), {server:null, io:null})
-
   app.use(helmet);
-  app.use(session(app));
-  app.use(bodyparser());
   app.use(rateLimit);
+  app.use(bodyparser());
+  app.use(session(app));
   app.use(auth);
   app.use(graphQLProxy({ version: ApiVersion.April19 }));
   app.use(root.routes());
@@ -47,17 +46,9 @@ nextApp.prepare().then(() => {
 
   app.io.on(SocketEvent.CONNECT, worker.registerClient);
 
-  app.io.on(SocketEvent.MESSAGE, (ctx) => {
-    console.log('server message', ctx.session)
-  })
-
   app.io.on(SocketEvent.ERROR, (error) => {
     console.log('error', error)
   })
-
-  Object.keys(worker.modules).map((moduleName: any) => 
-    app.io.on(moduleName, (ctx) => worker.handle(moduleName, ctx))
-  );
 
   app.io.use(shareSession(app));
   app.io.use(verifySocketMessage);

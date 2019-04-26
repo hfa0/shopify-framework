@@ -1,3 +1,5 @@
+// @ts-check
+
 const host = "https://9e889079.ngrok.io/"
 import * as socketIO from 'socket.io-client';
 
@@ -17,28 +19,36 @@ const parseData = (res) => {
 
 
 const Socket = function() {
-  const socket = {}
-  let io = socketIO(host);
-  io.on('connect', () => {
+
+  let socket = socketIO({
+    host,
+    forceNew: false,
+    transportOptions: {
+      polling: {
+        extraHeaders: {
+          'x-clientid': 'client-id'
+        }
+      }
+    }
+  });
+
+  socket.on('connect', () => {
     console.log('socket connect')
   });
-  io.on('service', (ctx) => {
-    console.log('socket message', ctx)
-  });
-  io.on('disconnect', (reason) => {
+
+  socket.on('disconnect', (reason) => {
     console.log('socket disconnect', reason);
-    io.removeAllListeners();
-    io.disconnect();
-    io.close();
-    io = null;
+    socket.removeAllListeners();
+    socket = null;
   });
 
-  io.on('error', (err) => {
+  socket.on('error', (err) => {
     console.log('socket error', err)
-    io.disconnect();
   })
 
-  socket.io = io;
+  socket.io.reconnectionAttempts(3);
+  socket.io.reconnectionDelay(5000);
+
   return socket;
 }
 
@@ -56,7 +66,7 @@ const API = {
     .then((json)=>parseData(json))
     .catch(err=>console.log(err));
   },
-  socket : null,
+  socket : Socket(),
 };
 
-export {API, Socket};
+export default API
