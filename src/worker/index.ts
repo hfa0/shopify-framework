@@ -34,15 +34,14 @@ export class Client {
     this.socket.emit(event, JSON.stringify(data));
   }
 
-  public addJob(method: ModuleMethod) {
-    this.taskManager.addQueue(() => method(this, this.lastMessage));
+  public addJob(method: ModuleMethod, job: string) {
+    this.taskManager.addQueue(() => method(this, this.lastMessage), job);
   }
 
   public setLastMessage(data: IncomingEventData) {
     this.lastMessage = data;
   }
 }
-
 
 export class Worker {
 
@@ -57,7 +56,7 @@ export class Worker {
     if (!method) {
       return client.emit(SocketEvent.INTERNAL_ERROR, "not found");
     }
-    client.addJob(method);
+    client.addJob(method, data.job);
   }
 
   private registerClientEvents(client: Client) {

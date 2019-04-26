@@ -9,7 +9,9 @@ export class Queue {
 
   private state: QUEUESTATE = QUEUESTATE.IDLE;
   
-  constructor(public readonly id: number, private task: Function) {
+  constructor(public readonly id: number, 
+              private task: Function,
+              public readonly job: string) {
   }
 
   getState() {
@@ -18,8 +20,9 @@ export class Queue {
 
   run = async (finished) => {
     if (this.state === QUEUESTATE.IDLE) {
+      console.log("server", "running task", this.job);
       this.state = QUEUESTATE.RUNNING;
-      this.task();
+      await this.task();
       this.state = QUEUESTATE.ENDED;
       return finished(true);
     }
@@ -36,9 +39,10 @@ export class TaskManager {
   private parallelQueues: Queue[] = [];
   private jobCount = 0;
   
-  public addQueue(method: Function):void {
+  public addQueue(method: Function, job: string): void {
     if (!this.isMaxQueues()) {
-      const queue = new Queue(this.jobCount, method);
+      console.log("server", "add queue", this.jobCount, job)
+      const queue = new Queue(this.jobCount, method, job);
       this.jobCount++;
       this.waitingQueues.push(queue);
       this.nextQueue();
@@ -46,7 +50,8 @@ export class TaskManager {
   }
 
   private nextQueue(): void {
-    if (!this.isMaxParallelQueues()) {
+    if (!this.isMaxParallelQueues() && this.isQueueWaiting()) {
+      console.log("server", "next queue")
       const firstQueue = this.waitingQueues.shift();
       this.parallelQueues.push(firstQueue);
       firstQueue.run(finished => {
@@ -57,12 +62,17 @@ export class TaskManager {
 
   private isMaxQueues(): boolean { 
     const waiting = this.waitingQueues.filter((q) => q.getState()===QUEUESTATE.IDLE).length;
-    const running = this.parallelQueues.filter((q) => q.getState()!==QUEUESTATE.ENDED).length;
+    const running = this.parallelQueues.filter((q) => q.getState()===QUEUESTATE.RUNNING).length;
     return ( waiting + running) >= this.maxQueues;
   }
+
   private isMaxParallelQueues(): boolean {
-    const running = this.parallelQueues.filter((q) => q.getState()!==QUEUESTATE.ENDED).length;
+    const running = this.parallelQueues.filter((q) => q.getState()===QUEUESTATE.RUNNING).length;
     return running >= this.maxParallelQueues;
+  }
+
+  private isQueueWaiting(): boolean { 
+    return this.waitingQueues.some((q) => q.getState()===QUEUESTATE.IDLE);
   }
 
   public isRunning(): boolean {

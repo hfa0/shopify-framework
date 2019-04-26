@@ -23,6 +23,7 @@ const Socket = function() {
   let socket = socketIO({
     host,
     forceNew: false,
+    autoConnect: false,
     transportOptions: {
       polling: {
         extraHeaders: {
@@ -32,26 +33,40 @@ const Socket = function() {
     }
   });
 
+  const close = () => {
+    socket.removeAllListeners();
+    socket.close();
+    socket = null;
+    console.log('client socket closed');
+  }
+
   socket.on('connect', () => {
-    console.log('socket connect')
+    console.log('client socket connect')
   });
 
   socket.on('disconnect', (reason) => {
-    console.log('socket disconnect', reason);
-    socket.removeAllListeners();
-    socket = null;
+    console.log('client socket disconnect', reason);
+    close();
+  });
+
+  socket.on('reconnect_failed', () => {
+    console.log('client socket reconnect fail');
+    close();
   });
 
   socket.on('error', (err) => {
-    console.log('socket error', err)
+    console.log('client socket error', err);
+    close();
   })
 
   socket.on('internal_error', (err) => {
-    console.log('socket internal error', err)
+    console.log('client socket internal error', err)
   })
 
   socket.io.reconnectionAttempts(3);
   socket.io.reconnectionDelay(5000);
+
+  socket.open();
 
   return socket;
 }
