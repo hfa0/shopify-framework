@@ -1,9 +1,11 @@
+import { Context } from "koa";
+
 const dotenv = require('dotenv');
 dotenv.config();
 
 const { API_VERSION } = process.env;
 
-export default async function processPayment(ctx, next) {
+export default async function processPayment(ctx: Context, next) {
   console.log('payment');
   
   if (ctx.query.charge_id) {

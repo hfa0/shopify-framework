@@ -4,7 +4,7 @@ export enum ModuleName {
   'BULK' = 'bulk',
 }
 
-export type ModuleMethod = (client: Client, data: IncomingEventData) => void
+export type ModuleMethod = (client: Client) => void
 
 export interface IAppModule {
   getMethod: (data: IncomingEventData) => ModuleMethod

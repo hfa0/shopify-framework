@@ -20,6 +20,10 @@ import { Worker, SocketEvent } from './worker';
 import * as csurf from 'csurf';
 const worker = new Worker();
 
+export interface InternalApp extends Koa {
+  server: http.Server
+  io: socketIO.Socket
+}
 
 nextApp.prepare().then(() => {
   const app = Object.assign(new Koa(), {server:null, io:null})

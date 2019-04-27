@@ -3,11 +3,12 @@ import * as http from 'http';
 import * as limiter from 'koa-ratelimit';
 import * as Redis from 'ioredis';
 import koaHelmet = require('koa-helmet');
-import { IncomingEventData } from '../worker';
+import { IncomingEventData, InternalSocket } from '../worker';
 import { ModuleName } from '../modules';
+import { InternalApp } from '../server';
 
-export const shareSession = (app) => {
-  return (socket, next) => {
+export const shareSession = (app: InternalApp) => {
+  return (socket: InternalSocket, next) => {
     let error = null;
     try {
       const ctx = app.createContext(socket.request, new http.ServerResponse(socket.request));
@@ -22,19 +23,19 @@ export const shareSession = (app) => {
 }
 
 
-export const verifySocketMessage = (socket, next) => {
+export const verifySocketMessage = (socket: InternalSocket, next) => {
   console.log("server", 'verify');
   const xHeader = socket.handshake.headers['x-clientid']
   if (!socket.session.accessToken || xHeader !== 'client-id') {
     console.log("server", "no authorization");
     socket.emit('error', "no authorization");
-    socket.disconnect();
+    socket.disconnect(true);
     return next("no authorization - disconnected");
   }
   return next();
 }
 
-export const verifed = (socket, next) => {
+export const verifed = (socket: InternalSocket, next) => {
   console.log('server', 'verifed', socket.session.shop);
   return next();
 }
@@ -54,7 +55,7 @@ export const unpackData = (event: ModuleName, dataString: string): [string, Inco
 
 
 export const rateLimit = limiter({
-  db: new Redis({host: "127.0.0.1", port:5000}),
+  db: new Redis({host: "127.0.0.1", port: 5000}),
   duration: 60 * 1000,
   errorMessage: 'Sometimes You Just Have to Slow Down.',
   id: (ctx) => ctx.ip,
@@ -66,7 +67,6 @@ export const rateLimit = limiter({
   max: 100,
   disableHeader: false,
 })
-
 
 export const helmet = koaHelmet({
   frameguard: false,

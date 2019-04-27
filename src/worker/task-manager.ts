@@ -1,3 +1,6 @@
+import { IncomingEventData } from ".";
+import { ModuleName } from "../modules";
+
 enum QUEUESTATE {
   'IDLE' = 'IDLE',
   'RUNNING' = 'RUNNING',
@@ -8,10 +11,14 @@ enum QUEUESTATE {
 export class Queue {
 
   private state: QUEUESTATE = QUEUESTATE.IDLE;
-  
-  constructor(public readonly id: number, 
-              private task: Function,
-              public readonly job: string) {
+  private job: string;
+  private module: ModuleName;
+  constructor(
+    public readonly id: number, 
+    private task: Function,
+    data: IncomingEventData) {
+      this.job = data.job;
+      this.module = data.event;
   }
 
   getState() {
@@ -20,7 +27,7 @@ export class Queue {
 
   run = async (finished) => {
     if (this.state === QUEUESTATE.IDLE) {
-      console.log("server", "running task", this.job);
+      console.log("server", "running task", this.module, this.job);
       this.state = QUEUESTATE.RUNNING;
       await this.task();
       this.state = QUEUESTATE.ENDED;
@@ -39,10 +46,10 @@ export class TaskManager {
   private parallelQueues: Queue[] = [];
   private jobCount = 0;
   
-  public addQueue(method: Function, job: string): void {
+  public addQueue(method: Function, data: IncomingEventData): void {
     if (!this.isMaxQueues()) {
-      console.log("server", "add queue", this.jobCount, job)
-      const queue = new Queue(this.jobCount, method, job);
+      console.log("server", "add queue", this.jobCount, data.event, data.job)
+      const queue = new Queue(this.jobCount, method, data);
       this.jobCount++;
       this.waitingQueues.push(queue);
       this.nextQueue();

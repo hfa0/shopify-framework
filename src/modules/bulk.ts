@@ -1,4 +1,4 @@
-import { Client } from "../worker";
+import { Client, IncomingEventData } from "../worker";
 import { IAppModule, AppModule, ModuleMethod, ModuleName } from ".";
 
 
